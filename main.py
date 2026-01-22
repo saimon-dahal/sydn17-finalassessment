@@ -1,7 +1,8 @@
 import tkinter as tk
 from ui_components import MenuBar
 from tkinter import filedialog
-from PIL import Image
+from PIL import Image, ImageTk
+
 class ImageEditorApp:
     def __init__(self, root):
         self.root = root
@@ -50,6 +51,27 @@ class ImageEditorApp:
         
         self.image = Image.open(path)
         print(f"Image path: {path}")
+
+        self.display_image()
+
+    def display_image(self):
+        """Show image on canvas"""
+        if not self.image:
+            return
+        
+        self.canvas.update_idletasks()
+        cw = self.canvas.winfo_width()
+        ch = self.canvas.winfo_height()
+        
+        img = self.image.copy()
+        img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
+        
+        self.photo_image = ImageTk.PhotoImage(img)
+        self.canvas.delete("all")
+        
+        x = (cw - img.width) // 2
+        y = (ch - img.height) // 2
+        self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
 
     def todo(self):
         print("Placeholder for unwritten features...")
