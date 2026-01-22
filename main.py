@@ -1,6 +1,7 @@
 import tkinter as tk
 from ui_components import MenuBar
-
+from tkinter import filedialog
+from PIL import Image
 class ImageEditorApp:
     def __init__(self, root):
         self.root = root
@@ -11,7 +12,7 @@ class ImageEditorApp:
     
     def setup_ui(self):
         self.menu = MenuBar(self.root, {
-            'open': self.todo,
+            'open': self.open_image,
             'save': self.todo,
             'save_as': self.todo,
             'undo': self.todo,
@@ -19,6 +20,16 @@ class ImageEditorApp:
             'about': self.todo
         })
     
+    def open_image(self):
+        path = filedialog.askopenfilename(
+            filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.gif")]
+        )
+        if not path:
+            return
+        
+        self.image = Image.open(path)
+        print(f"Image path: {path}")
+
     def todo(self):
         print("Placeholder for unwritten features...")
 
