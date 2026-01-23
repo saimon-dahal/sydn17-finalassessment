@@ -1,5 +1,5 @@
 import tkinter as tk
-from ui_components import MenuBar
+from ui_components import MenuBar, StatusBar
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
@@ -8,6 +8,12 @@ class ImageEditorApp:
         self.root = root
         self.root.title("SYDN-17 Image Editor")
         self.root.geometry("1000x700")
+
+        # Image storage
+        self.original_image = None
+        self.current_image = None
+        self.photo_image = None
+        self.filename = "No image loaded"
 
         self.setup_ui()
     
@@ -22,6 +28,9 @@ class ImageEditorApp:
         })
 
         self.create_workspace()
+
+        self.status_bar = StatusBar(self.root)
+        self.status_bar.update("No image loaded")
 
     def create_workspace(self):
         workspace = tk.Frame(self.root, bg="#fafafa")
@@ -49,21 +58,23 @@ class ImageEditorApp:
         if not path:
             return
         
-        self.image = Image.open(path)
-        print(f"Image path: {path}")
-
+        self.original_image = Image.open(path)
+        self.current_image = self.original_image.copy()
+        self.filename = path.split("/")[-1]
+        
         self.display_image()
+        self.update_status()
 
     def display_image(self):
         """Show image on canvas"""
-        if not self.image:
+        if not self.current_image:
             return
         
         self.canvas.update_idletasks()
         cw = self.canvas.winfo_width()
         ch = self.canvas.winfo_height()
         
-        img = self.image.copy()
+        img = self.current_image.copy()
         img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
         
         self.photo_image = ImageTk.PhotoImage(img)
@@ -72,6 +83,14 @@ class ImageEditorApp:
         x = (cw - img.width) // 2
         y = (ch - img.height) // 2
         self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
+
+    def update_status(self):
+        """Update status bar"""
+        if self.current_image:
+            w, h = self.current_image.size
+            self.status_bar.update(f"{self.filename} | {w} × {h} px")
+        else:
+            self.status_bar.update("No image loaded")
 
     def todo(self):
         print("Placeholder for unwritten features...")
