@@ -1,5 +1,5 @@
 import tkinter as tk
-from ui_components import MenuBar, StatusBar
+from ui_components import MenuBar, StatusBar, ControlPanel
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
@@ -51,6 +51,12 @@ class ImageEditorApp:
                                highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
+        # Control Panel
+        self.control_panel = ControlPanel(workspace, {
+            'button': self.todo,
+            'slider': self.on_slider
+        })
+
     def open_image(self):
         path = filedialog.askopenfilename(
             filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.gif")]
@@ -94,6 +100,9 @@ class ImageEditorApp:
 
     def todo(self):
         print("Placeholder for unwritten features...")
+    def on_slider(self, value):
+        print(f"Slider: {value}")
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
