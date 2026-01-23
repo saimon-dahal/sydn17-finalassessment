@@ -1,0 +1,17 @@
+[window]
+title = "SYDN-17 Image Editor"
+width = 1000
+height = 700
+min_width = 800
+min_height = 600
+
+[colors]
+background = "#fafafa"
+canvas_background = "#ffffff"
+status_bar_background = "#e8e8e8"
+status_bar_foreground = "#000000"
+
+[layout]
+workspace_padding = 5
+canvas_column_weight = 3
+panel_column_weight = 1
