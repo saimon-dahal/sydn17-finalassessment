@@ -26,6 +26,7 @@ class ImageEditorApp:
         self.root.configure(bg=settings.colors.background)
 
     def setup_ui(self):
+        """Initialize UI components"""
         self.menu = MenuBar(self.root, {
             'open': self.open_image,
             'save': self.todo,
@@ -41,7 +42,7 @@ class ImageEditorApp:
         self.status_bar.update("No image loaded")
 
     def create_workspace(self):
-        workspace = tk.Frame(self.root, bg="#fafafa")
+        workspace = tk.Frame(self.root, bg=settings.colors.background)
         workspace.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
         workspace.grid_rowconfigure(0, weight=1)
         workspace.grid_columnconfigure(0, weight=3)
@@ -51,11 +52,11 @@ class ImageEditorApp:
         self.root.grid_columnconfigure(0, weight=1)
         
         # Canvas
-        canvas_frame = tk.Frame(workspace, bg="#ffffff", 
+        canvas_frame = tk.Frame(workspace, bg=settings.colors.canvas_background, 
                                relief=tk.RIDGE, bd=1)
         canvas_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
         
-        self.canvas = tk.Canvas(canvas_frame, bg="#ffffff", 
+        self.canvas = tk.Canvas(canvas_frame, bg=settings.colors.canvas_background, 
                                highlightthickness=0)
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
