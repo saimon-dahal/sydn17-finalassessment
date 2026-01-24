@@ -1,15 +1,14 @@
 import tkinter as tk
-from tkinter import messagebox
-from core.image_manager import ImageManager
-from core.file_handler import FileHandler
+from PIL import Image, ImageTk
 from ui.menu_bar import MenuBar
+from ui.dialogs import AboutDialog
+from config.config import settings
 from ui.status_bar import StatusBar
 from ui.control_panel import ControlPanel
+from core.file_handler import FileHandler
+from tkinter import messagebox
 from ui.canvas_display import CanvasDisplay
-from tkinter import filedialog
-from PIL import Image, ImageTk
-from config.config import settings
-from ui.dialogs import AboutDialog
+from core.image_manager import ImageManager
 
 
 class ImageEditorApp:
@@ -84,26 +83,27 @@ class ImageEditorApp:
         if not self.image_manager.has_image():
             messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
-        
+
         if self.file_handler.save_file(
-            self.image_manager.get_current_image(),
-            self.image_manager.filename
+            self.image_manager.get_current_image(), self.image_manager.filename
         ):
             self.status_bar.update(f"Saved: {self.image_manager.filename}")
+
     def save_image_as(self):
-        """Save image with new filename"""`
+        """Save image with new filename"""
         if not self.image_manager.has_image():
             messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
-        
+
         success, filename = self.file_handler.save_file_as(
             self.image_manager.get_current_image()
         )
-        
+
         if success and filename:
             self.image_manager.filename = filename
             self.status_bar.update(f"Saved as: {filename}")
             self.update_status()
+
     def display_image(self):
         """Show image on canvas"""
         if not self.current_image:
@@ -126,12 +126,12 @@ class ImageEditorApp:
     def update_status(self):
         """Update status bar with current image info"""
         info = self.image_manager.get_image_info()
-        if info['width'] > 0:
+        if info["width"] > 0:
             self.status_bar.update(
                 f"{info['filename']} | {info['width']} × {info['height']} px"
             )
         else:
-            self.status_bar.update(info['filename'])
+            self.status_bar.update(info["filename"])
 
     def todo(self):
         print("Placeholder for unwritten features...")
