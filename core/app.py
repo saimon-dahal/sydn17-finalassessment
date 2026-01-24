@@ -1,139 +1,217 @@
 import tkinter as tk
-from PIL import Image, ImageTk
-from ui.menu_bar import MenuBar
-from ui.dialogs import AboutDialog
+from tkinter import messagebox
+
 from config.config import settings
+
+from core.image_manager import ImageManager
+from core.file_handler import FileHandler
+
+from ui.menu_bar import MenuBar
 from ui.status_bar import StatusBar
 from ui.control_panel import ControlPanel
-from core.file_handler import FileHandler
-from tkinter import messagebox
 from ui.canvas_display import CanvasDisplay
-from core.image_manager import ImageManager
-from operations import adjustments
+from ui.dialogs import ResizeDialog, AboutDialog
+
+from operations import adjustments, filters, transforms
+from utils.validators import validate_blur_intensity
+
 
 class ImageEditorApp:
+    """Main application controller"""
+    
     def __init__(self, root):
         """Initialize application"""
         self.root = root
         self.setup_window()
-
+        
+        # Core components
         self.image_manager = ImageManager()
         self.file_handler = FileHandler()
-
-        # Image storage
-        self.original_image = None
-        self.current_image = None
-        self.photo_image = None
-
+        
+        # UI components
+        self.menu_bar = None
+        self.status_bar = None
+        self.control_panel = None
+        self.canvas_display = None
+        
         self.setup_ui()
-
+    
     def setup_window(self):
         """Configure main window"""
         self.root.title(settings.window.title)
         self.root.geometry(f"{settings.window.width}x{settings.window.height}")
         self.root.configure(bg=settings.colors.background)
-
+    
     def setup_ui(self):
-        """Initialize UI components"""
-        self.menu = MenuBar(
-            self.root,
-            {
-                "open": self.open_image,
-                "save": self.save_image,
-                "save_as": self.save_image_as,
-                "undo": self.todo,
-                "redo": self.todo,
-                "about": self.show_about,
-            },
-        )
-
+        """Initialize all UI components."""
+        self.menu_bar = MenuBar(self.root, {
+            'open': self.open_image,
+            'save': self.save_image,
+            'save_as': self.save_image_as,
+            'undo': self.undo,
+            'redo': self.redo,
+            'about': self.show_about
+        })
+        
+        # Workspace
         self.create_workspace()
-
+        
+        # Status bar
         self.status_bar = StatusBar(self.root)
         self.status_bar.update(self.image_manager.filename)
-
+    
     def create_workspace(self):
+        """Create main workspace with canvas and control panel"""
         workspace = tk.Frame(self.root, bg=settings.colors.background)
-        workspace.grid(row=1, column=0, sticky="nsew", padx=5, pady=5)
+        workspace.grid(row=1, column=0, sticky="nsew", padx=settings.layout.workspace_padding, pady=settings.layout.workspace_padding)
+        
+        # Configure grid
         workspace.grid_rowconfigure(0, weight=1)
-        workspace.grid_columnconfigure(0, weight=3)
-        workspace.grid_columnconfigure(1, weight=1)
-
+        workspace.grid_columnconfigure(0, weight=settings.layout.canvas_column_weight)
+        workspace.grid_columnconfigure(1, weight=settings.layout.panel_column_weight)
+        
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-
+        
+        # Canvas display
         self.canvas_display = CanvasDisplay(workspace)
-
-        # Control Panel
-        self.control_panel = ControlPanel(
-            workspace, {"button": self.todo, "slider": self.on_slider}
-        )
-
+        
+        # Control panel
+        self.control_panel = ControlPanel(workspace, {
+            'button_click': self.handle_button_click,
+            'slider_change': self.handle_slider_change,
+            'apply_adjustments': self.apply_adjustments
+        })
+    
     def open_image(self):
         """Open image file"""
-        image, filename = self.file_handler.open_file()
-
-        if image and filename:
-            self.image_manager.load_image(image, filename)
+        image, filepath = self.file_handler.open_file()
+        
+        if image and filepath:
+            self.image_manager.load_image(image, filepath)
             self.canvas_display.display_image(self.image_manager.get_current_image())
             self.update_status()
-
+            self.control_panel.reset_sliders()
+    
     def save_image(self):
         """Save current image"""
         if not self.image_manager.has_image():
             messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
-
+        
         if self.file_handler.save_file(
-            self.image_manager.get_current_image(), self.image_manager.filename
+            self.image_manager.get_current_image(),
+            self.image_manager.filepath
         ):
-            self.status_bar.update(f"Saved: {self.image_manager.filename}")
-
+            self.status_bar.show_save_message(f"Saved: {self.image_manager.filename}")
+    
     def save_image_as(self):
         """Save image with new filename"""
         if not self.image_manager.has_image():
             messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
-
-        success, filename = self.file_handler.save_file_as(
+        
+        success, filepath = self.file_handler.save_file_as(
             self.image_manager.get_current_image()
         )
-
-        if success and filename:
+        
+        if success and filepath:
+            # Update path and filename - extract filename for display
+            filename = filepath.split("/")[-1]
+            self.image_manager.filepath = filepath
             self.image_manager.filename = filename
-            self.status_bar.update(f"Saved as: {filename}")
+            
+            self.status_bar.show_save_message(f"Saved as: {filename}")
             self.update_status()
-
-    def display_image(self):
-        """Show image on canvas"""
-        if not self.current_image:
-            return
-
-        self.canvas.update_idletasks()
-        cw = self.canvas.winfo_width()
-        ch = self.canvas.winfo_height()
-
-        img = self.current_image.copy()
-        img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
-
-        self.photo_image = ImageTk.PhotoImage(img)
-        self.canvas.delete("all")
-
-        x = (cw - img.width) // 2
-        y = (ch - img.height) // 2
-        self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
-
-    def update_status(self):
-        """Update status bar with current image info"""
-        info = self.image_manager.get_image_info()
-        if info["width"] > 0:
-            self.status_bar.update(
-                f"{info['filename']} | {info['width']} × {info['height']} px"
-            )
+    
+    def undo(self):
+        """Undo last operation"""
+        if self.image_manager.undo():
+            self.canvas_display.display_image(self.image_manager.get_current_image())
+            self.update_status()
         else:
-            self.status_bar.update(info["filename"])
-
-
+            self.status_bar.update("Nothing to undo")
+    
+    def redo(self):
+        """Redo last undone operation"""
+        if self.image_manager.redo():
+            self.canvas_display.display_image(self.image_manager.get_current_image())
+            self.update_status()
+        else:
+            self.status_bar.update("Nothing to redo")
+    
+    def handle_button_click(self, event=None):
+        """Handle all button clicks from control panel"""
+        if not self.image_manager.has_image():
+            messagebox.showwarning("Warning", settings.messages.load_image_first)
+            return
+        
+        # Get button text
+        widget = event.widget if event else self.root.focus_get()
+        if not widget:
+            return
+        
+        button_text = widget.cget("text")
+        
+        try:
+            current_image = self.image_manager.get_current_image()
+            
+            # FILTERS
+            if button_text == "Grayscale":
+                result = filters.apply_grayscale(current_image)
+                self.image_manager.update_image(result)
+                self.status_bar.update("Applied grayscale filter")
+            
+            elif button_text == "Blur":
+                intensity = validate_blur_intensity(self.control_panel.blur_slider.get())
+                result = filters.apply_blur(current_image, intensity)
+                self.image_manager.update_image(result)
+                self.status_bar.update(f"Applied blur (intensity: {intensity})")
+            
+            elif button_text == "Edge Detect":
+                result = filters.apply_edge_detection(current_image)
+                self.image_manager.update_image(result)
+                self.status_bar.update("Applied edge detection")
+            
+            # TRANSFORMS - Rotation
+            elif button_text == "90°":
+                result = transforms.rotate_image(current_image, 90)
+                self.image_manager.update_image(result)
+                self.status_bar.update("Rotated 90° clockwise")
+            
+            elif button_text == "180°":
+                result = transforms.rotate_image(current_image, 180)
+                self.image_manager.update_image(result)
+                self.status_bar.update("Rotated 180°")
+            
+            elif button_text == "270°":
+                result = transforms.rotate_image(current_image, 270)
+                self.image_manager.update_image(result)
+                self.status_bar.update("Rotated 270° clockwise")
+            
+            # TRANSFORMS - Flipping
+            elif button_text == "Horizontal":
+                result = transforms.flip_image(current_image, "horizontal")
+                self.image_manager.update_image(result)
+                self.status_bar.update("Flipped horizontally")
+            
+            elif button_text == "Vertical":
+                result = transforms.flip_image(current_image, "vertical")
+                self.image_manager.update_image(result)
+                self.status_bar.update("Flipped vertically")
+            
+            # TRANSFORMS - Resize
+            elif button_text == "Resize Image":
+                self.show_resize_dialog()
+                return  # Dialog handles the rest
+            
+            # Update display
+            self.canvas_display.display_image(self.image_manager.get_current_image())
+            self.update_status()
+        
+        except Exception as e:
+            messagebox.showerror("Error", f"Operation failed:\n{str(e)}")
+    
     def handle_slider_change(self, value):
         """Handle slider value changes"""
         if not self.image_manager.has_image():
@@ -149,6 +227,7 @@ class ImageEditorApp:
         
         except Exception as e:
             print(f"Slider error: {e}")
+    
     def preview_adjustments(self):
         """Preview brightness and contrast adjustments in real-time"""
         # Get slider values
@@ -160,7 +239,7 @@ class ImageEditorApp:
         self.control_panel.contrast_value.config(text=str(int(contrast_val)))
         
         # Apply to original image (not current, for clean preview)
-        temp_image = self.image_manager.get_original_image().copy()
+        temp_image = self.image_manager.get_current_image().copy()
         
         # Apply brightness
         if brightness_val != 0:
@@ -172,10 +251,11 @@ class ImageEditorApp:
         
         # Display preview (don't update history yet)
         self.canvas_display.display_image(temp_image)
-
+    
     def apply_adjustments(self):
         """Apply and save brightness/contrast adjustments"""
         if not self.image_manager.has_image():
+            messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
         
         brightness_val = self.control_panel.brightness_slider.get()
@@ -187,7 +267,7 @@ class ImageEditorApp:
         
         try:
             # Apply to original
-            result = self.image_manager.get_original_image().copy()
+            result = self.image_manager.get_current_image().copy()
             
             if brightness_val != 0:
                 result = adjustments.adjust_brightness(result, brightness_val)
@@ -207,12 +287,40 @@ class ImageEditorApp:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to apply adjustments:\n{str(e)}")
     
-    def todo(self):
-        print("Placeholder for unwritten features...")
-
-    def on_slider(self, value):
-        print(f"Slider: {value}")
-
+    def show_resize_dialog(self):
+        """Show resize dialog"""
+        current_size = self.image_manager.get_current_image().size
+        ResizeDialog(self.root, current_size, self.resize_image)
+    
+    def resize_image(self, width, height):
+        """
+        Resize image to specified dimensions
+        
+        Args:
+            width: New width
+            height: New height
+        """
+        try:
+            current_image = self.image_manager.get_current_image()
+            result = transforms.resize_image(current_image, width, height)
+            self.image_manager.update_image(result)
+            self.canvas_display.display_image(result)
+            self.update_status()
+            self.status_bar.update(f"Resized to {width} × {height} px")
+        
+        except Exception as e:
+            messagebox.showerror("Error", f"Resize failed:\n{str(e)}")
+    
     def show_about(self):
         """Show about dialog"""
         AboutDialog.show(self.root)
+    
+    def update_status(self):
+        """Update status bar with current image info"""
+        info = self.image_manager.get_image_info()
+        if info['width'] > 0:
+            self.status_bar.update(
+                f"{info['filename']} | {info['width']} × {info['height']} px"
+            )
+        else:
+            self.status_bar.update(info['filename'])
