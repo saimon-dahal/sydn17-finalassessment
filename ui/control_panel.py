@@ -1,6 +1,7 @@
 import tkinter as tk
 
 from tkinter import ttk
+from config.config import settings
 class ControlPanel:
     """Creates and manages the tabbed control panel"""
     def __init__(self, parent, callbacks):
@@ -25,14 +26,14 @@ class ControlPanel:
         
         # Brightness
         tk.Label(tab, text="Brightness").pack(pady=(10, 2))
-        self.brightness_value = tk.Label(tab, text="0")
+        self.brightness_value = tk.Label(tab, text="0", font=("Arial", 9))
         self.brightness_value.pack()
         
         self.brightness_slider = tk.Scale(
-            tab, from_=-100, to=100,
+            tab, from_=settings.brightness_contrast.min_brightness, to=settings.brightness_contrast.max_brightness,
             orient=tk.HORIZONTAL,
             showvalue=0,
-            command=self.callbacks['slider']
+            command=self.callbacks.get('slider_change')
         )
         self.brightness_slider.pack(fill=tk.X, padx=10)
         
@@ -42,12 +43,21 @@ class ControlPanel:
         self.contrast_value.pack()
         
         self.contrast_slider = tk.Scale(
-            tab, from_=-100, to=100,
+            tab, from_=settings.brightness_contrast.min_contrast, to=settings.brightness_contrast.max_contrast,
             orient=tk.HORIZONTAL,
             showvalue=0,
-            command=self.callbacks['slider']
+            command=self.callbacks.get('slider_change')
         )
         self.contrast_slider.pack(fill=tk.X, padx=10)
+
+        tk.Button(
+            tab,
+            text="Apply Adjustments",
+            command=self.callbacks.get('apply_adjustments'),
+            bg="#4CAF50",
+            fg="white",
+            font=("Arial", 9, "bold")
+        ).pack(pady=20)
     
     def create_filters_tab(self):
         tab = tk.Frame(self.notebook)
@@ -100,3 +110,10 @@ class ControlPanel:
         tk.Label(tab, text="Resize").pack(pady=(15, 5))
         tk.Button(tab, text="Resize Image",
                   command=self.callbacks['button']).pack(pady=5)
+    def reset_sliders(self):
+        """Reset all sliders to default values"""
+        self.brightness_slider.set(0)
+        self.contrast_slider.set(0)
+        self.blur_slider.set(settings.image_processing.default_blur_intensity)
+        self.brightness_value.config(text="0")
+        self.contrast_value.config(text="0")

@@ -9,7 +9,7 @@ from core.file_handler import FileHandler
 from tkinter import messagebox
 from ui.canvas_display import CanvasDisplay
 from core.image_manager import ImageManager
-
+from operations import adjustments
 
 class ImageEditorApp:
     def __init__(self, root):
@@ -133,6 +133,80 @@ class ImageEditorApp:
         else:
             self.status_bar.update(info["filename"])
 
+
+    def handle_slider_change(self, value):
+        """Handle slider value changes"""
+        if not self.image_manager.has_image():
+            return
+        
+        try:
+            # Get current tab
+            current_tab = self.control_panel.notebook.select()
+            tab_text = self.control_panel.notebook.tab(current_tab, "text")
+            
+            if tab_text == "Adjust":
+                self.preview_adjustments()
+        
+        except Exception as e:
+            print(f"Slider error: {e}")
+    def preview_adjustments(self):
+        """Preview brightness and contrast adjustments in real-time"""
+        # Get slider values
+        brightness_val = self.control_panel.brightness_slider.get()
+        contrast_val = self.control_panel.contrast_slider.get()
+        
+        # Update labels
+        self.control_panel.brightness_value.config(text=str(int(brightness_val)))
+        self.control_panel.contrast_value.config(text=str(int(contrast_val)))
+        
+        # Apply to original image (not current, for clean preview)
+        temp_image = self.image_manager.get_original_image().copy()
+        
+        # Apply brightness
+        if brightness_val != 0:
+            temp_image = adjustments.adjust_brightness(temp_image, brightness_val)
+        
+        # Apply contrast
+        if contrast_val != 0:
+            temp_image = adjustments.adjust_contrast(temp_image, contrast_val)
+        
+        # Display preview (don't update history yet)
+        self.canvas_display.display_image(temp_image)
+
+    def apply_adjustments(self):
+        """Apply and save brightness/contrast adjustments"""
+        if not self.image_manager.has_image():
+            return
+        
+        brightness_val = self.control_panel.brightness_slider.get()
+        contrast_val = self.control_panel.contrast_slider.get()
+        
+        if brightness_val == 0 and contrast_val == 0:
+            self.status_bar.update("No adjustments to apply")
+            return
+        
+        try:
+            # Apply to original
+            result = self.image_manager.get_original_image().copy()
+            
+            if brightness_val != 0:
+                result = adjustments.adjust_brightness(result, brightness_val)
+            
+            if contrast_val != 0:
+                result = adjustments.adjust_contrast(result, contrast_val)
+            
+            # Update image and history
+            self.image_manager.update_image(result)
+            self.canvas_display.display_image(result)
+            self.update_status()
+            
+            # Reset sliders
+            self.control_panel.reset_sliders()
+            self.status_bar.update("Adjustments applied")
+        
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to apply adjustments:\n{str(e)}")
+    
     def todo(self):
         print("Placeholder for unwritten features...")
 
