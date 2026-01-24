@@ -1,3 +1,4 @@
+
 [window]
 title = "SYDN-17 Image Editor"
 width = 1000
@@ -15,6 +16,19 @@ status_bar_foreground = "#000000"
 workspace_padding = 5
 canvas_column_weight = 3
 panel_column_weight = 1
+canvas_padding = 20
+
+[image_processing]
+max_undo_history = 20
+default_blur_intensity = 5
+min_blur_intensity = 1
+max_blur_intensity = 15
+
+[brightness_contrast]
+min_brightness = -100
+max_brightness = 100
+min_contrast = -100
+max_contrast = 100
 
 [file_types]
 supported_formats = [
@@ -39,3 +53,16 @@ no_image = "No image loaded"
 load_image_first = "Please load an image first!"
 save_success = "Image saved successfully"
 operation_failed = "Operation failed"
+
+[about]
+title = "About SYDN-17 Image Editor"
+message = """
+SYDN-17 Image Editor
+
+A professional image editing application
+built with Python, Tkinter, and OpenCV
+
+Version 1.0
+
+Developed by SYDN-17 Team
+"""
