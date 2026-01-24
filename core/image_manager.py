@@ -15,6 +15,22 @@ class ImageManager:
 
     def udpate_image(self, image):
         self.current_image = image.copy()
+    
+    def can_redo(self):
+        """Check if redo is available"""
+        return self.history_index < len(self.history) - 1
+    
+    def get_current_image(self):
+        """Get the current image"""
+        return self.current_image
+    
+    def get_original_image(self):
+        """Get the original image"""
+        return self.original_image
+    
+    def has_image(self):
+        """Check if an image is loaded"""
+        return self.current_image is not None
 
     def get_image_info(self):
         if not self.current_image:

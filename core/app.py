@@ -1,12 +1,15 @@
 import tkinter as tk
 from tkinter import messagebox
 from core.image_manager import ImageManager
+from core.file_handler import FileHandler
 from ui.menu_bar import MenuBar
 from ui.status_bar import StatusBar
 from ui.control_panel import ControlPanel
+from ui.canvas_display import CanvasDisplay
 from tkinter import filedialog
 from PIL import Image, ImageTk
 from config.config import settings
+from ui.dialogs import AboutDialog
 
 
 class ImageEditorApp:
@@ -16,12 +19,12 @@ class ImageEditorApp:
         self.setup_window()
 
         self.image_manager = ImageManager()
+        self.file_handler = FileHandler()
 
         # Image storage
         self.original_image = None
         self.current_image = None
         self.photo_image = None
-        self.filename = "No image loaded"
 
         self.setup_ui()
 
@@ -37,11 +40,11 @@ class ImageEditorApp:
             self.root,
             {
                 "open": self.open_image,
-                "save": self.todo,
-                "save_as": self.todo,
+                "save": self.save_image,
+                "save_as": self.save_image_as,
                 "undo": self.todo,
                 "redo": self.todo,
-                "about": self.todo,
+                "about": self.show_about,
             },
         )
 
@@ -60,16 +63,7 @@ class ImageEditorApp:
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
 
-        # Canvas
-        canvas_frame = tk.Frame(
-            workspace, bg=settings.colors.canvas_background, relief=tk.RIDGE, bd=1
-        )
-        canvas_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-
-        self.canvas = tk.Canvas(
-            canvas_frame, bg=settings.colors.canvas_background, highlightthickness=0
-        )
-        self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas_display = CanvasDisplay(workspace)
 
         # Control Panel
         self.control_panel = ControlPanel(
@@ -77,19 +71,39 @@ class ImageEditorApp:
         )
 
     def open_image(self):
-        path = filedialog.askopenfilename(
-            filetypes=[("Images", "*.png *.jpg *.jpeg *.bmp *.gif")]
-        )
-        if not path:
+        """Open image file"""
+        image, filename = self.file_handler.open_file()
+
+        if image and filename:
+            self.image_manager.load_image(image, filename)
+            self.canvas_display.display_image(self.image_manager.get_current_image())
+            self.update_status()
+
+    def save_image(self):
+        """Save current image"""
+        if not self.image_manager.has_image():
+            messagebox.showwarning("Warning", settings.messages.load_image_first)
             return
-
-        self.original_image = Image.open(path)
-        self.current_image = self.original_image.copy()
-        self.filename = path.split("/")[-1]
-
-        self.display_image()
-        self.update_status()
-
+        
+        if self.file_handler.save_file(
+            self.image_manager.get_current_image(),
+            self.image_manager.filename
+        ):
+            self.status_bar.update(f"Saved: {self.image_manager.filename}")
+    def save_image_as(self):
+        """Save image with new filename"""`
+        if not self.image_manager.has_image():
+            messagebox.showwarning("Warning", settings.messages.load_image_first)
+            return
+        
+        success, filename = self.file_handler.save_file_as(
+            self.image_manager.get_current_image()
+        )
+        
+        if success and filename:
+            self.image_manager.filename = filename
+            self.status_bar.update(f"Saved as: {filename}")
+            self.update_status()
     def display_image(self):
         """Show image on canvas"""
         if not self.current_image:
@@ -110,15 +124,21 @@ class ImageEditorApp:
         self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
 
     def update_status(self):
-        """Update status bar"""
-        if self.current_image:
-            w, h = self.current_image.size
-            self.status_bar.update(f"{self.filename} | {w} × {h} px")
+        """Update status bar with current image info"""
+        info = self.image_manager.get_image_info()
+        if info['width'] > 0:
+            self.status_bar.update(
+                f"{info['filename']} | {info['width']} × {info['height']} px"
+            )
         else:
-            self.status_bar.update("No image loaded")
+            self.status_bar.update(info['filename'])
 
     def todo(self):
         print("Placeholder for unwritten features...")
 
     def on_slider(self, value):
         print(f"Slider: {value}")
+
+    def show_about(self):
+        """Show about dialog"""
+        AboutDialog.show(self.root)
