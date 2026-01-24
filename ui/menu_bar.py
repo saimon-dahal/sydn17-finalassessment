@@ -19,16 +19,26 @@ class MenuBar:
         file_menu.add_command(
             label="Open", command=self.callbacks["open"], accelerator="Ctrl+O"
         )
-        file_menu.add_command(label="Save", command=self.callbacks["save"], accelerator="Ctrl+S")
-        file_menu.add_command(label="Save As", command=self.callbacks["save_as"], accelerator="Ctrl+Shift+S")
+        file_menu.add_command(
+            label="Save", command=self.callbacks["save"], accelerator="Ctrl+S"
+        )
+        file_menu.add_command(
+            label="Save As",
+            command=self.callbacks["save_as"],
+            accelerator="Ctrl+Shift+S",
+        )
         file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.root.quit)
         menubar.add_cascade(label="File", menu=file_menu)
 
         # Edit menu
         edit_menu = tk.Menu(menubar, tearoff=0)
-        edit_menu.add_command(label="Undo", command=self.callbacks["undo"], accelerator="Ctrl+Z")
-        edit_menu.add_command(label="Redo", command=self.callbacks["redo"], accelerator="Ctrl+Y")
+        edit_menu.add_command(
+            label="Undo", command=self.callbacks["undo"], accelerator="Ctrl+Z"
+        )
+        edit_menu.add_command(
+            label="Redo", command=self.callbacks["redo"], accelerator="Ctrl+Y"
+        )
         menubar.add_cascade(label="Edit", menu=edit_menu)
 
         # Help menu
