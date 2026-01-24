@@ -1,6 +1,9 @@
 import tkinter as tk
 from tkinter import messagebox
-from ui_components import MenuBar, StatusBar, ControlPanel
+from core.image_manager import ImageManager
+from ui.menu_bar import MenuBar
+from ui.status_bar import StatusBar
+from ui.control_panel import ControlPanel
 from tkinter import filedialog
 from PIL import Image, ImageTk
 from config.config import settings
@@ -10,6 +13,8 @@ class ImageEditorApp:
         """Initialize application"""
         self.root = root
         self.setup_window()
+
+        self.image_manager = ImageManager()
 
         # Image storage
         self.original_image = None
@@ -39,7 +44,7 @@ class ImageEditorApp:
         self.create_workspace()
 
         self.status_bar = StatusBar(self.root)
-        self.status_bar.update("No image loaded")
+        self.status_bar.update(self.image_manager.filename)
 
     def create_workspace(self):
         workspace = tk.Frame(self.root, bg=settings.colors.background)

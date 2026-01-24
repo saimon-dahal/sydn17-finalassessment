@@ -15,3 +15,27 @@ status_bar_foreground = "#000000"
 workspace_padding = 5
 canvas_column_weight = 3
 panel_column_weight = 1
+
+[file_types]
+supported_formats = [
+    ["Image Files", "*.png *.jpg *.jpeg *.bmp *.gif"],
+    ["PNG", "*.png"],
+    ["JPEG", "*.jpg *.jpeg"],
+    ["BMP", "*.bmp"],
+    ["All Files", "*.*"]
+]
+
+save_formats = [
+    ["PNG", "*.png"],
+    ["JPEG", "*.jpg"],
+    ["BMP", "*.bmp"],
+    ["All Files", "*.*"]
+]
+
+default_save_extension = ".png"
+
+[messages]
+no_image = "No image loaded"
+load_image_first = "Please load an image first!"
+save_success = "Image saved successfully"
+operation_failed = "Operation failed"
