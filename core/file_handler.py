@@ -2,28 +2,32 @@ from tkinter import filedialog, messagebox
 from PIL import Image
 from config.config import settings
 
-class FileHandler:
 
+class FileHandler:
+    """Manages file operations for images"""
+    
     @staticmethod
     def open_file():
+        """Open file dialog and load image."""
         filepath = filedialog.askopenfilename(
             title="Open Image",
             filetypes=settings.file_types.supported_formats
         )
-
+        
         if not filepath:
             return None, None
         
         try:
             image = Image.open(filepath)
-            filename = filepath.split("/")[-1]
-            return image, filename
+            return image, filepath
+        
         except Exception as e:
             messagebox.showerror("Error", f"Failed to open image:\n{str(e)}")
             return None, None
-        
+    
     @staticmethod
     def save_file(image, current_filename=None):
+        """Save image (overwrite if filename exists)."""
         if not image:
             messagebox.showwarning("Warning", "No image to save!")
             return False
@@ -39,17 +43,10 @@ class FileHandler:
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save image:\n{str(e)}")
             return False
+    
     @staticmethod
     def save_file_as(image):
-        """
-        Save image with new filename
-        
-        Args:
-            image: PIL Image object
-        
-        Returns:
-            tuple: (success: bool, filename: str or None)
-        """
+        """Save image with new filename."""
         if not image:
             messagebox.showwarning("Warning", "No image to save!")
             return False, None
@@ -65,8 +62,7 @@ class FileHandler:
         
         try:
             image.save(filepath)
-            filename = filepath.split("/")[-1]
-            return True, filename
+            return True, filepath
         
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save image:\n{str(e)}")
