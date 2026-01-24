@@ -8,6 +8,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 from config.config import settings
 
+
 class ImageEditorApp:
     def __init__(self, root):
         """Initialize application"""
@@ -32,14 +33,17 @@ class ImageEditorApp:
 
     def setup_ui(self):
         """Initialize UI components"""
-        self.menu = MenuBar(self.root, {
-            'open': self.open_image,
-            'save': self.todo,
-            'save_as': self.todo,
-            'undo': self.todo,
-            'redo': self.todo,
-            'about': self.todo
-        })
+        self.menu = MenuBar(
+            self.root,
+            {
+                "open": self.open_image,
+                "save": self.todo,
+                "save_as": self.todo,
+                "undo": self.todo,
+                "redo": self.todo,
+                "about": self.todo,
+            },
+        )
 
         self.create_workspace()
 
@@ -52,24 +56,25 @@ class ImageEditorApp:
         workspace.grid_rowconfigure(0, weight=1)
         workspace.grid_columnconfigure(0, weight=3)
         workspace.grid_columnconfigure(1, weight=1)
-        
+
         self.root.grid_rowconfigure(1, weight=1)
         self.root.grid_columnconfigure(0, weight=1)
-        
+
         # Canvas
-        canvas_frame = tk.Frame(workspace, bg=settings.colors.canvas_background, 
-                               relief=tk.RIDGE, bd=1)
+        canvas_frame = tk.Frame(
+            workspace, bg=settings.colors.canvas_background, relief=tk.RIDGE, bd=1
+        )
         canvas_frame.grid(row=0, column=0, sticky="nsew", padx=(0, 5))
-        
-        self.canvas = tk.Canvas(canvas_frame, bg=settings.colors.canvas_background, 
-                               highlightthickness=0)
+
+        self.canvas = tk.Canvas(
+            canvas_frame, bg=settings.colors.canvas_background, highlightthickness=0
+        )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
         # Control Panel
-        self.control_panel = ControlPanel(workspace, {
-            'button': self.todo,
-            'slider': self.on_slider
-        })
+        self.control_panel = ControlPanel(
+            workspace, {"button": self.todo, "slider": self.on_slider}
+        )
 
     def open_image(self):
         path = filedialog.askopenfilename(
@@ -77,11 +82,11 @@ class ImageEditorApp:
         )
         if not path:
             return
-        
+
         self.original_image = Image.open(path)
         self.current_image = self.original_image.copy()
         self.filename = path.split("/")[-1]
-        
+
         self.display_image()
         self.update_status()
 
@@ -89,17 +94,17 @@ class ImageEditorApp:
         """Show image on canvas"""
         if not self.current_image:
             return
-        
+
         self.canvas.update_idletasks()
         cw = self.canvas.winfo_width()
         ch = self.canvas.winfo_height()
-        
+
         img = self.current_image.copy()
         img.thumbnail((cw, ch), Image.Resampling.LANCZOS)
-        
+
         self.photo_image = ImageTk.PhotoImage(img)
         self.canvas.delete("all")
-        
+
         x = (cw - img.width) // 2
         y = (ch - img.height) // 2
         self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
@@ -114,5 +119,6 @@ class ImageEditorApp:
 
     def todo(self):
         print("Placeholder for unwritten features...")
+
     def on_slider(self, value):
         print(f"Slider: {value}")
