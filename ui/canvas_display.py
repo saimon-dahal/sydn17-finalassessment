@@ -1,30 +1,20 @@
-"""
-Canvas Display Component
-========================
-Manages the canvas widget for displaying images.
-"""
-
 import tkinter as tk
 from PIL import Image, ImageTk
 from config.config import settings
 
+
 class CanvasDisplay:
-    """Manages canvas for image display"""
+    """Manages canvas for image display."""
     
     def __init__(self, parent):
-        """
-        Initialize canvas display
-        
-        Args:
-            parent: Parent widget
-        """
+        """Initialize canvas display."""
         self.parent = parent
         self.canvas = None
         self.photo_image = None
         self.create_canvas()
     
     def create_canvas(self):
-        """Create the canvas widget"""
+        """Create the canvas widget."""
         canvas_frame = tk.Frame(
             self.parent,
             bg=settings.colors.canvas_background,
@@ -39,14 +29,16 @@ class CanvasDisplay:
             highlightthickness=0
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
+        self.canvas.bind('<Configure>', lambda e: self.on_resize())
+        self.show_placeholder()
+    
+    def on_resize(self):
+        """Handle canvas resize."""
+        if not self.photo_image:
+            self.show_placeholder()
     
     def display_image(self, image):
-        """
-        Display image on canvas with proper scaling
-        
-        Args:
-            image: PIL Image object to display
-        """
+        """Display image on canvas with proper scaling."""
         if not image:
             return
         
@@ -61,8 +53,8 @@ class CanvasDisplay:
         
         # Create a copy and scale it to fit canvas
         display_image = image.copy()
-        max_width = canvas_width - settings.layout.workspace_padding
-        max_height = canvas_height - settings.layout.workspace_padding
+        max_width = canvas_width - settings.layout.canvas_padding
+        max_height = canvas_height - settings.layout.canvas_padding
         display_image.thumbnail((max_width, max_height), Image.Resampling.LANCZOS)
         
         # Convert to PhotoImage
@@ -78,10 +70,29 @@ class CanvasDisplay:
         self.canvas.create_image(x, y, image=self.photo_image, anchor="nw")
     
     def clear(self):
-        """Clear the canvas"""
+        """Clear the canvas."""
         self.canvas.delete("all")
         self.photo_image = None
+        self.show_placeholder()
+
+    def show_placeholder(self):
+        """Display placeholder text when no image is loaded."""
+        self.canvas.delete("all")
+        width = self.canvas.winfo_width()
+        height = self.canvas.winfo_height()
+        
+        # Default dimensions if canvas not yet rendered
+        if width <= 1: width = 600
+        if height <= 1: height = 400
+            
+        self.canvas.create_text(
+            width // 2,
+            height // 2,
+            text="Please load an image",
+            fill="gray",
+            font=("Arial", 14)
+        )
     
     def get_canvas(self):
-        """Get the canvas widget"""
+        """Get the canvas widget."""
         return self.canvas
