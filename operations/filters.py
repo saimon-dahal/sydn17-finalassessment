@@ -17,14 +17,22 @@ def apply_blur(image, intensity):
     """
     Apply Gaussian blur to the image.
     """
-    img_cv= pil_to_cv2(image)
-    #ensure kernel size is odd and valid
-    # map 1-100 to roughly 1-31 or similar
-    k_size= int(intensity/ 3) * 2+1
-    if k_size < 1:
-        k_size= 1
+    # Ensure RGB and convert to OpenCV BGR
+    img_cv = pil_to_cv2(image)
 
-    blurred= cv2.GaussianBlur(img_cv, (k_size, k_size), 0)
+    # If intensity is 0, return image unchanged
+    if int(intensity) <= 0:
+        return image
+
+    # Map slider 1–15 to strong, perceptible kernel sizes 3–31 (odd numbers)
+    k_size = max(1, int(intensity))
+    # force odd
+    if k_size % 2 == 0:
+        k_size += 1
+    # scale up to make blur visible even on high-res images
+    k_size = min(31, k_size * 2 + 1)  # 1->3, 5->11, 10->21, 15->31
+
+    blurred = cv2.GaussianBlur(img_cv, (k_size, k_size), 0)
     return cv2_to_pil(blurred)
 
 

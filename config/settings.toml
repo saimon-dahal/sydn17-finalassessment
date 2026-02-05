@@ -20,8 +20,8 @@ canvas_padding = 20
 
 [image_processing]
 max_undo_history = 20
-default_blur_intensity = 5
-min_blur_intensity = 1
+default_blur_intensity = 0
+min_blur_intensity = 0
 max_blur_intensity = 15
 
 [brightness_contrast]
@@ -29,6 +29,10 @@ min_brightness = -100
 max_brightness = 100
 min_contrast = -100
 max_contrast = 100
+
+[saturation]
+min = -100
+max = 100
 
 [file_types]
 supported_formats = [

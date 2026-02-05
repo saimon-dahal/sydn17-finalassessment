@@ -27,6 +27,7 @@ class ImageEditorApp:
         # Core components
         self.image_manager = ImageManager()
         self.file_handler = FileHandler()
+        self.blur_base_image = None  # keeps the state before applying blur so re-applying isn't cumulative
         
         # UI components
         self.menu_bar = None
@@ -87,7 +88,8 @@ class ImageEditorApp:
         self.control_panel = ControlPanel(workspace, {
             'button_click': self.handle_button_click,
             'slider_change': self.handle_slider_change,
-            'apply_adjustments': self.apply_adjustments
+            'apply_adjustments': self.apply_adjustments,
+            'reset_image': self.reset_image
         })
     
     def open_image(self):
@@ -99,6 +101,10 @@ class ImageEditorApp:
             self.canvas_display.display_image(self.image_manager.get_current_image())
             self.update_status()
             self.control_panel.reset_sliders()
+            # Prefill crop fields to full image size
+            w, h = self.image_manager.get_current_image().size
+            self.control_panel.set_crop_defaults(w, h)
+            self.blur_base_image = None
     
     def save_image(self):
         """Save current image"""
@@ -136,6 +142,7 @@ class ImageEditorApp:
         if self.image_manager.undo():
             self.canvas_display.display_image(self.image_manager.get_current_image())
             self.update_status()
+            self.blur_base_image = None
         else:
             self.status_bar.update("Nothing to undo")
     
@@ -144,6 +151,7 @@ class ImageEditorApp:
         if self.image_manager.redo():
             self.canvas_display.display_image(self.image_manager.get_current_image())
             self.update_status()
+            self.blur_base_image = None
         else:
             self.status_bar.update("Nothing to redo")
     
@@ -170,11 +178,17 @@ class ImageEditorApp:
                 result = filters.apply_grayscale(current_image)
                 self.image_manager.update_image(result)
                 self.status_bar.update("Applied grayscale filter")
+                self.blur_base_image = None
             
             elif button_text == "Blur":
-                # Use default intensity since slider was removed
-                intensity = settings.image_processing.default_blur_intensity
-                result = filters.apply_blur(current_image, intensity)
+                raw_intensity = self.control_panel.blur_slider.get()
+                intensity = validate_blur_intensity(raw_intensity)
+                # Use a stored baseline so re-applying blur doesn't stack
+                if self.blur_base_image is None:
+                    self.blur_base_image = current_image.copy()
+                base_image = self.blur_base_image.copy()
+
+                result = filters.apply_blur(base_image, intensity)
                 self.image_manager.update_image(result)
                 self.status_bar.update(f"Applied blur (intensity: {intensity})")
             
@@ -182,33 +196,39 @@ class ImageEditorApp:
                 result = filters.apply_edge_detection(current_image)
                 self.image_manager.update_image(result)
                 self.status_bar.update("Applied edge detection")
+                self.blur_base_image = None
             
             # TRANSFORMS - Rotation
             elif button_text == "90°":
                 result = transforms.rotate_image(current_image, 90)
                 self.image_manager.update_image(result)
                 self.status_bar.update("Rotated 90° clockwise")
+                self.blur_base_image = None
             
             elif button_text == "180°":
                 result = transforms.rotate_image(current_image, 180)
                 self.image_manager.update_image(result)
                 self.status_bar.update("Rotated 180°")
+                self.blur_base_image = None
             
             elif button_text == "270°":
                 result = transforms.rotate_image(current_image, 270)
                 self.image_manager.update_image(result)
                 self.status_bar.update("Rotated 270° clockwise")
+                self.blur_base_image = None
             
             # TRANSFORMS - Flipping
             elif button_text == "Horizontal":
                 result = transforms.flip_image(current_image, "horizontal")
                 self.image_manager.update_image(result)
                 self.status_bar.update("Flipped horizontally")
+                self.blur_base_image = None
             
             elif button_text == "Vertical":
                 result = transforms.flip_image(current_image, "vertical")
                 self.image_manager.update_image(result)
                 self.status_bar.update("Flipped vertically")
+                self.blur_base_image = None
             
             elif button_text == "Resize":
                 try:
@@ -218,6 +238,41 @@ class ImageEditorApp:
                 except ValueError:
                     messagebox.showerror("Error", "Please enter valid integer values for Width and Height")
                 return
+
+            elif button_text == "Crop":
+                try:
+                    # Treat inputs as margins to trim; blanks default to 0
+                    l_raw = self.control_panel.crop_left.get().strip()
+                    r_raw = self.control_panel.crop_right.get().strip()
+                    t_raw = self.control_panel.crop_top.get().strip()
+                    b_raw = self.control_panel.crop_bottom.get().strip()
+
+                    left_trim = int(l_raw) if l_raw else 0
+                    right_trim = int(r_raw) if r_raw else 0
+                    top_trim = int(t_raw) if t_raw else 0
+                    bottom_trim = int(b_raw) if b_raw else 0
+
+                    w, h = current_image.size
+
+                    # Convert margins into box coordinates
+                    l = max(0, left_trim)
+                    t = max(0, top_trim)
+                    r = w - max(0, right_trim)
+                    b = h - max(0, bottom_trim)
+
+                    if l >= r or t >= b:
+                        raise ValueError("Crop margins remove the whole image; reduce the values.")
+
+                    result = transforms.crop_image(current_image, l, t, r, b)
+                    self.image_manager.update_image(result)
+                    self.status_bar.update("Cropped image")
+                    # Update defaults to new size so next crop starts from full current image
+                    w, h = result.size
+                    self.control_panel.set_crop_defaults(w, h)
+                    self.blur_base_image = None
+                except Exception as e:
+                    messagebox.showerror("Error", f"Crop failed:\n{str(e)}")
+                    return
             
             # Update display
             self.canvas_display.display_image(self.image_manager.get_current_image())
@@ -262,6 +317,13 @@ class ImageEditorApp:
         # Apply contrast
         if contrast_val != 0:
             temp_image = adjustments.adjust_contrast(temp_image, contrast_val)
+
+        # Apply saturation
+        if hasattr(self.control_panel, "sat_slider"):
+            sat_val = self.control_panel.sat_slider.get()
+            self.control_panel.sat_value.config(text=str(int(sat_val)))
+            if sat_val != 0:
+                temp_image = adjustments.adjust_saturation(temp_image, sat_val)
         
         # Display preview (don't update history yet)
         self.canvas_display.display_image(temp_image)
@@ -274,8 +336,9 @@ class ImageEditorApp:
         
         brightness_val = self.control_panel.brightness_slider.get()
         contrast_val = self.control_panel.contrast_slider.get()
+        sat_val = self.control_panel.sat_slider.get() if hasattr(self.control_panel, "sat_slider") else 0
         
-        if brightness_val == 0 and contrast_val == 0:
+        if brightness_val == 0 and contrast_val == 0 and sat_val == 0:
             self.status_bar.update("No adjustments to apply")
             return
         
@@ -288,6 +351,9 @@ class ImageEditorApp:
             
             if contrast_val != 0:
                 result = adjustments.adjust_contrast(result, contrast_val)
+
+            if sat_val != 0:
+                result = adjustments.adjust_saturation(result, sat_val)
             
             # Update image and history
             self.image_manager.update_image(result)
@@ -297,6 +363,7 @@ class ImageEditorApp:
             # Reset sliders
             self.control_panel.reset_sliders()
             self.status_bar.update("Adjustments applied")
+            self.blur_base_image = None
         
         except Exception as e:
             messagebox.showerror("Error", f"Failed to apply adjustments:\n{str(e)}")
@@ -316,9 +383,26 @@ class ImageEditorApp:
             self.image_manager.update_image(result)
             self.canvas_display.display_image(result)
             self.update_status()
+            self.blur_base_image = None
         
         except Exception as e:
             messagebox.showerror("Error", f"Resize failed:\n{str(e)}")
+
+    def reset_image(self):
+        """Restore image to the original loaded state."""
+        if not self.image_manager.has_image():
+            messagebox.showwarning("Warning", settings.messages.load_image_first)
+            return
+        
+        if self.image_manager.reset():
+            self.canvas_display.display_image(self.image_manager.get_current_image())
+            self.update_status()
+            w, h = self.image_manager.get_current_image().size
+            self.control_panel.set_crop_defaults(w, h)
+            self.status_bar.update("Reverted to original image")
+            self.blur_base_image = None
+        else:
+            self.status_bar.update("Nothing to reset")
     
     def show_about(self):
         """Show about dialog"""
