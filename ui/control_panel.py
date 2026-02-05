@@ -21,6 +21,18 @@ class ControlPanel:
         self.create_adjust_tab()
         self.create_filters_tab()
         self.create_transform_tab()
+
+        # Global actions footer (visible on every tab)
+        footer = tk.Frame(panel)
+        footer.pack(fill=tk.X, padx=5, pady=(0, 8))
+        tk.Button(
+            footer,
+            text="Reset to Original",
+            command=self.callbacks.get('reset_image'),
+            bg="#f44336",
+            fg="white",
+            font=("Arial", 9, "bold")
+        ).pack(fill=tk.X)
     
     def create_adjust_tab(self):
         """Create the Adjust tab with brightness and contrast sliders."""
@@ -58,16 +70,34 @@ class ControlPanel:
             command=self.callbacks.get('slider_change')
         )
         self.contrast_slider.pack(fill=tk.X, padx=10)
+
+        # Saturation section
+        tk.Label(tab, text="Saturation", font=("Arial", 10, "bold")).pack(pady=(15, 2))
+
+        self.sat_value = tk.Label(tab, text="0", font=("Arial", 9))
+        self.sat_value.pack()
+
+        self.sat_slider = tk.Scale(
+            tab,
+            from_=settings.saturation.min,
+            to=settings.saturation.max,
+            orient=tk.HORIZONTAL,
+            showvalue=0,
+            command=self.callbacks.get('slider_change')
+        )
+        self.sat_slider.pack(fill=tk.X, padx=10)
         
         # Apply button
         tk.Button(
             tab,
             text="Apply Adjustments",
             command=self.callbacks.get('apply_adjustments'),
-            bg="#4CAF50",
-            fg="white",
+            bg="#e0e0e0",
+            fg="black",
             font=("Arial", 9, "bold")
-        ).pack(pady=20)
+        ).pack(pady=20, fill=tk.X, padx=10)
+
+        self.add_reset_button(tab)
     
     def create_filters_tab(self):
         """Create the Filters tab with filter buttons."""
@@ -82,7 +112,21 @@ class ControlPanel:
             width=20
         ).pack(pady=10, padx=10)
         
-        # Blur section
+        # Blur section with intensity slider
+        tk.Label(tab, text="Blur intensity", font=("Arial", 10, "bold")).pack(pady=(10, 2))
+        self.blur_value = tk.Label(tab, text=str(settings.image_processing.default_blur_intensity), font=("Arial", 9))
+        self.blur_value.pack()
+        self.blur_slider = tk.Scale(
+            tab,
+            from_=settings.image_processing.min_blur_intensity,
+            to=settings.image_processing.max_blur_intensity,
+            orient=tk.HORIZONTAL,
+            showvalue=0,
+            command=lambda v: self.blur_value.config(text=str(int(float(v))))
+        )
+        self.blur_slider.set(settings.image_processing.default_blur_intensity)
+        self.blur_slider.pack(fill=tk.X, padx=10)
+
         tk.Button(
             tab,
             text="Blur",
@@ -97,6 +141,8 @@ class ControlPanel:
             command=lambda: self.callbacks.get('button_click')("Edge Detect"),
             width=20
         ).pack(pady=10, padx=10)
+
+        self.add_reset_button(tab)
     
     def create_transform_tab(self):
         """Create the Transform tab with rotation, flip, and resize options."""
@@ -157,6 +203,52 @@ class ControlPanel:
             command=lambda: self.callbacks.get('button_click')("Resize"),
             width=15
         ).pack(pady=5)
+
+        # Crop section
+        tk.Label(tab, text="Crop margins (L,R,T,B px)", font=("Arial", 10, "bold")).pack(pady=(15, 5))
+
+        crop_frame = tk.Frame(tab)
+        crop_frame.pack(pady=5)
+
+        self.crop_left = tk.Entry(crop_frame, width=5)
+        self.crop_left.pack(side=tk.LEFT, padx=2)
+        self.crop_top = tk.Entry(crop_frame, width=5)
+        self.crop_top.pack(side=tk.LEFT, padx=2)
+        self.crop_right = tk.Entry(crop_frame, width=5)
+        self.crop_right.pack(side=tk.LEFT, padx=2)
+        self.crop_bottom = tk.Entry(crop_frame, width=5)
+        self.crop_bottom.pack(side=tk.LEFT, padx=2)
+
+        tk.Button(
+            tab,
+            text="Crop",
+            command=lambda: self.callbacks.get('button_click')("Crop"),
+            width=15
+        ).pack(pady=5)
+
+        self.add_reset_button(tab)
+
+    def add_reset_button(self, parent):
+        """Add reset-to-original button to a tab."""
+        tk.Button(
+            parent,
+            text="Reset to Original",
+            command=self.callbacks.get('reset_image'),
+            bg="#ffe5e5",
+            fg="black",
+            font=("Arial", 9, "bold")
+        ).pack(fill=tk.X, pady=(12, 8), padx=10)
+
+    def set_crop_defaults(self, width, height):
+        """Populate crop boxes with zero margins (no crop)."""
+        self.crop_left.delete(0, tk.END)
+        self.crop_top.delete(0, tk.END)
+        self.crop_right.delete(0, tk.END)
+        self.crop_bottom.delete(0, tk.END)
+        self.crop_left.insert(0, "0")
+        self.crop_top.insert(0, "0")
+        self.crop_right.insert(0, "0")
+        self.crop_bottom.insert(0, "0")
     
     def reset_sliders(self):
         """Reset all sliders to default values."""
@@ -164,3 +256,9 @@ class ControlPanel:
         self.contrast_slider.set(0)
         self.brightness_value.config(text="0")
         self.contrast_value.config(text="0")
+        if hasattr(self, "sat_slider"):
+            self.sat_slider.set(0)
+            self.sat_value.config(text="0")
+        if hasattr(self, "blur_slider"):
+            self.blur_slider.set(settings.image_processing.default_blur_intensity)
+            self.blur_value.config(text=str(settings.image_processing.default_blur_intensity))

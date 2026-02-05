@@ -18,21 +18,14 @@ def validate_dimensions(width, height):
 
 
 def validate_blur_intensity(intensity):
-    """Validate and adjust blur intensity to be an odd number."""
+    """Validate blur intensity slider input."""
     try:
         value = int(intensity)
-        
-        # Clamp to valid range
-        value = max(1, min(15, value))
-        
-        # Ensure odd number
-        if value % 2 == 0:
-            value += 1
-        
+        # Clamp to 0-15; 0 means no blur
+        value = max(0, min(15, value))
         return value
-    
     except (ValueError, TypeError):
-        return 5  # Default value
+        return 0  # Default to 0 blur on invalid input
 
 
 def validate_angle(angle):
