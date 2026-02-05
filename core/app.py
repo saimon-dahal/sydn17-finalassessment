@@ -165,7 +165,8 @@ class ImageEditorApp:
                 self.status_bar.update("Applied grayscale filter")
             
             elif button_text == "Blur":
-                intensity = validate_blur_intensity(self.control_panel.blur_slider.get())
+                # Use default intensity since slider was removed
+                intensity = settings.image_processing.default_blur_intensity
                 result = filters.apply_blur(current_image, intensity)
                 self.image_manager.update_image(result)
                 self.status_bar.update(f"Applied blur (intensity: {intensity})")

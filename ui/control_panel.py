@@ -78,7 +78,7 @@ class ControlPanel:
         tk.Button(
             tab,
             text="Grayscale",
-            command=self.callbacks.get('button_click'),
+            command=lambda: self.callbacks.get('button_click')("Grayscale"),
             width=20
         ).pack(pady=10, padx=10)
         
@@ -86,27 +86,15 @@ class ControlPanel:
         tk.Button(
             tab,
             text="Blur",
-            command=self.callbacks.get('button_click'),
+            command=lambda: self.callbacks.get('button_click')("Blur"),
             width=20
         ).pack(pady=5, padx=10)
-        
-        tk.Label(tab, text="Blur Intensity", font=("Arial", 9)).pack(pady=(5, 2))
-        
-        self.blur_slider = tk.Scale(
-            tab,
-            from_=settings.image_processing.min_blur_intensity,
-            to=settings.image_processing.max_blur_intensity,
-            orient=tk.HORIZONTAL,
-            command=self.callbacks.get('slider_change')
-        )
-        self.blur_slider.set(settings.image_processing.default_blur_intensity)
-        self.blur_slider.pack(fill=tk.X, padx=10)
         
         # Edge detection button
         tk.Button(
             tab,
             text="Edge Detect",
-            command=self.callbacks.get('button_click'),
+            command=lambda: self.callbacks.get('button_click')("Edge Detect"),
             width=20
         ).pack(pady=10, padx=10)
     
@@ -125,7 +113,7 @@ class ControlPanel:
             tk.Button(
                 rotate_frame,
                 text=angle,
-                command=self.callbacks.get('button_click'),
+                command=lambda a=angle: self.callbacks.get('button_click')(a),
                 width=6
             ).pack(side=tk.LEFT, padx=2)
         
@@ -138,14 +126,14 @@ class ControlPanel:
         tk.Button(
             flip_frame,
             text="Horizontal",
-            command=self.callbacks.get('button_click'),
+            command=lambda: self.callbacks.get('button_click')("Horizontal"),
             width=10
         ).pack(side=tk.LEFT, padx=2)
         
         tk.Button(
             flip_frame,
             text="Vertical",
-            command=self.callbacks.get('button_click'),
+            command=lambda: self.callbacks.get('button_click')("Vertical"),
             width=10
         ).pack(side=tk.LEFT, padx=2)
         
@@ -174,6 +162,5 @@ class ControlPanel:
         """Reset all sliders to default values."""
         self.brightness_slider.set(0)
         self.contrast_slider.set(0)
-        self.blur_slider.set(settings.image_processing.default_blur_intensity)
         self.brightness_value.config(text="0")
         self.contrast_value.config(text="0")
