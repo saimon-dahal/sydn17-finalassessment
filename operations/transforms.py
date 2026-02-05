@@ -2,11 +2,23 @@
 from PIL import Image
 
 
-def rotate_image(image):
-    return image
+def rotate_image(image, angle):
+    """
+    Rotate image by angle.
+    """
+    return image.rotate(-float(angle), expand=True)
+    
 
-
-def flip_image(image):
+def flip_image(image, direction):
+    """
+    Flip image horizontally or vertically
+    """
+    if direction == "horizontal":
+        return image.transpose(Image.Flip_Left_Right)
+    
+    elif direction == "vertical":
+        return image.transpose(Image.Flip_Top_Bottom)
+    
     return image
 
 
