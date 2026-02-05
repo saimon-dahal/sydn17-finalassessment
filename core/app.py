@@ -147,11 +147,13 @@ class ImageEditorApp:
             return
         
         # Get button text
-        widget = event.widget if event else self.root.focus_get()
-        if not widget:
-            return
-        
-        button_text = widget.cget("text")
+        if isinstance(event, str):
+            button_text = event
+        else:
+            widget = event.widget if event else self.root.focus_get()
+            if not widget:
+                return
+            button_text = widget.cget("text")
         
         try:
             current_image = self.image_manager.get_current_image()
@@ -200,10 +202,14 @@ class ImageEditorApp:
                 self.image_manager.update_image(result)
                 self.status_bar.update("Flipped vertically")
             
-            # TRANSFORMS - Resize
-            elif button_text == "Resize Image":
-                self.show_resize_dialog()
-                return  # Dialog handles the rest
+            elif button_text == "Resize":
+                try:
+                    width = int(self.control_panel.width_entry.get())
+                    height = int(self.control_panel.height_entry.get())
+                    self.resize_image(width, height)
+                except ValueError:
+                    messagebox.showerror("Error", "Please enter valid integer values for Width and Height")
+                return
             
             # Update display
             self.canvas_display.display_image(self.image_manager.get_current_image())
@@ -295,10 +301,6 @@ class ImageEditorApp:
     def resize_image(self, width, height):
         """
         Resize image to specified dimensions
-        
-        Args:
-            width: New width
-            height: New height
         """
         try:
             current_image = self.image_manager.get_current_image()
@@ -306,7 +308,6 @@ class ImageEditorApp:
             self.image_manager.update_image(result)
             self.canvas_display.display_image(result)
             self.update_status()
-            self.status_bar.update(f"Resized to {width} × {height} px")
         
         except Exception as e:
             messagebox.showerror("Error", f"Resize failed:\n{str(e)}")

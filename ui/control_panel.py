@@ -152,10 +152,21 @@ class ControlPanel:
         # Resize section
         tk.Label(tab, text="Resize", font=("Arial", 10, "bold")).pack(pady=(15, 5))
         
+        resize_frame = tk.Frame(tab)
+        resize_frame.pack(pady=5)
+        
+        tk.Label(resize_frame, text="W:").pack(side=tk.LEFT)
+        self.width_entry = tk.Entry(resize_frame, width=5)
+        self.width_entry.pack(side=tk.LEFT, padx=5)
+        
+        tk.Label(resize_frame, text="H:").pack(side=tk.LEFT)
+        self.height_entry = tk.Entry(resize_frame, width=5)
+        self.height_entry.pack(side=tk.LEFT, padx=5)
+        
         tk.Button(
             tab,
-            text="Resize Image",
-            command=self.callbacks.get('button_click'),
+            text="Resize",
+            command=lambda: self.callbacks.get('button_click')("Resize"),
             width=15
         ).pack(pady=5)
     
