@@ -41,6 +41,13 @@ class ImageEditorApp:
         self.root.title(settings.window.title)
         self.root.geometry(f"{settings.window.width}x{settings.window.height}")
         self.root.configure(bg=settings.colors.background)
+        
+        # Keyboard Shortcuts
+        self.root.bind('<Control-o>', lambda event: self.open_image())
+        self.root.bind('<Control-s>', lambda event: self.save_image())
+        self.root.bind('<Control-S>', lambda event: self.save_image_as()) # Ctrl+Shift+S
+        self.root.bind('<Control-z>', lambda event: self.undo())
+        self.root.bind('<Control-y>', lambda event: self.redo())
     
     def setup_ui(self):
         """Initialize all UI components."""
